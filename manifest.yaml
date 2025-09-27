@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dws-deployment
+  labels:
+    app: dws
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: dws
+  template:
+    metadata:
+      labels:
+        app: dws
+    spec:
+      containers:
+        - name: dws-container
+          image: dws4:latest
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 8080
+
+
+---
+
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: dws-service
+spec:
+  selector:
+    app: dws
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8080
+      nodePort: 30080
+  type: NodePort

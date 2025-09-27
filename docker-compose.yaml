@@ -1,0 +1,33 @@
+services:
+  redis:
+    image: redis:latest
+    container_name: distributed-ws-redis
+    ports:
+      - "6379:6379"
+    restart: no
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5' # Limit CPU usage to 50% of one core
+          memory: 256MB # Limit memory usage to 512MB
+        reservations:
+          cpus: '0.25' # Reserve 25% of one core
+          memory: 64MB # Reserve 256MB of memory
+
+  redisinsight:
+    image: redis/redisinsight:latest
+    container_name: distributed-ws-redis-insight
+    ports:
+      - "5540:5540" # Or any other desired port, e.g., 5540
+    depends_on:
+      - redis # Ensures Redis starts before RedisInsight
+    links:
+      - redis
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5' # Limit CPU usage to 50% of one core
+          memory: 256MB # Limit memory usage to 512MB
+        reservations:
+          cpus: '0.25' # Reserve 25% of one core
+          memory: 64MB # Reserve 256MB of memory

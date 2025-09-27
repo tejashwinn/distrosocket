@@ -1,6 +1,7 @@
 plugins {
     java
     id("io.quarkus")
+    kotlin("jvm")
 }
 
 repositories {
@@ -17,8 +18,21 @@ dependencies {
     implementation("io.quarkus:quarkus-rest")
     implementation("io.quarkus:quarkus-websockets")
     implementation("io.quarkus:quarkus-arc")
+    implementation("io.quarkus:quarkus-redis-client")
+    implementation("io.projectreactor.netty:reactor-netty:1.1.20")
     testImplementation("io.quarkus:quarkus-junit5")
     testImplementation("io.rest-assured:rest-assured")
+    // Lombok dependency for compile-time only
+    compileOnly("org.projectlombok:lombok:1.18.30") // Use the latest stable version
+    // Lombok dependency for annotation processing
+    annotationProcessor("org.projectlombok:lombok:1.18.30") // Use the latest stable version
+
+    // If you are using Lombok in your tests as well
+    testCompileOnly("org.projectlombok:lombok:1.18.30")
+    testAnnotationProcessor("org.projectlombok:lombok:1.18.30")
+    implementation(kotlin("stdlib-jdk8"))
+
+
 }
 
 group = "com.github.tejashwinn"
