@@ -1,29 +1,26 @@
 package com.github.tejashwinn.repo;
 
 import io.quarkus.redis.datasource.ReactiveRedisDataSource;
-import io.quarkus.redis.datasource.keys.ReactiveKeyCommands;
 import io.quarkus.redis.datasource.set.ReactiveSetCommands;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.Observes;
 import jakarta.enterprise.event.Shutdown;
+import jakarta.enterprise.event.Startup;
 import lombok.extern.slf4j.Slf4j;
-
-import java.util.List;
 
 @Slf4j
 @ApplicationScoped
 public class UserConnectionRepo {
 
-    private ReactiveSetCommands<String, String> serverCommands;
-    private ReactiveKeyCommands<String> keyCommands;
+    private final ReactiveSetCommands<String, String> valueCommands;
 
     public UserConnectionRepo(ReactiveRedisDataSource reactive) {
-        serverCommands = reactive.set(String.class);
-        keyCommands = reactive.key();
+        valueCommands = reactive.set(String.class);
     }
 
     public void put(String userId, String server) {
-        serverCommands.sadd(userId, server+System.nanoTime())
+        valueCommands
+                .sadd(userId, server)
                 .subscribe()
                 .with(
                         result -> {
@@ -36,7 +33,7 @@ public class UserConnectionRepo {
     }
 
     public void remove(String userId, String server) {
-        serverCommands.srem(userId, server)
+        valueCommands.srem(userId, server)
                 .subscribe()
                 .with(
                         result -> {
@@ -47,6 +44,9 @@ public class UserConnectionRepo {
 
                 );
     }
+
+
+
 
 
 }

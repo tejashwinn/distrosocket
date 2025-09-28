@@ -10,6 +10,8 @@ import java.time.Duration;
 
 @Slf4j
 public class Client {
+
+
     @SneakyThrows
     public static void main(String[] args) {
         String uri = "ws://localhost:8080/connections/";

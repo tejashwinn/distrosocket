@@ -1,6 +1,7 @@
 package com.github.tejashwinn;
 
 import com.github.tejashwinn.repo.UserConnectionRepo;
+import com.github.tejashwinn.util.NodeUtil;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.Observes;
 import jakarta.enterprise.event.Shutdown;
@@ -14,9 +15,9 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Slf4j
-@ServerEndpoint("/connections/{username}")
 @ApplicationScoped
 @RequiredArgsConstructor
+@ServerEndpoint("/connections/{username}")
 public class WebsocketServer {
 
     private final UserConnectionRepo userConnectionRepo;
@@ -27,20 +28,20 @@ public class WebsocketServer {
     public void onOpen(Session session, @PathParam("username") String username) {
         broadcast("User " + username + " joined");
         sessions.put(username, session);
-        userConnectionRepo.put(username, username);
+        userConnectionRepo.put(username, NodeUtil.NODE_ID);
     }
 
     @OnClose
     public void onClose(Session session, @PathParam("username") String username) {
         sessions.remove(username);
         broadcast("User " + username + " left");
-        userConnectionRepo.remove(username, username);
+        userConnectionRepo.remove(username, NodeUtil.NODE_ID);
     }
 
     @OnError
     public void onError(Session session, @PathParam("username") String username, Throwable throwable) {
         sessions.remove(username);
-        userConnectionRepo.remove(username, username);
+        userConnectionRepo.remove(username, NodeUtil.NODE_ID);
         broadcast("User " + username + " left on error: " + throwable);
     }
 
@@ -64,7 +65,7 @@ public class WebsocketServer {
     public void onStop(@Observes Shutdown ev) {
         log.info("The application is stopping...");
         sessions.keySet().forEach(
-                k -> userConnectionRepo.remove(k, k)
+                k -> userConnectionRepo.remove(k, NodeUtil.NODE_ID)
         );
     }
 

@@ -1,10 +1,13 @@
 package com.github.tejashwinn.util;
 
+import lombok.experimental.UtilityClass;
+
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.UUID;
 
-public class UUIDUtil {
+@UtilityClass
+public class UuidUtil {
 
     public static byte[] uuidToBytes(UUID uuid) {
         ByteBuffer bb = ByteBuffer.wrap(new byte[16]);
@@ -13,5 +16,4 @@ public class UUIDUtil {
         bb.putLong(uuid.getLeastSignificantBits());
         return bb.array();
     }
-
 }
