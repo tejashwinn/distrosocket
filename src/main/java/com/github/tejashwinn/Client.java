@@ -13,12 +13,12 @@ public class Client {
     @SneakyThrows
     public static void main(String[] args) {
         String uri = "ws://localhost:8080/connections/";
-        int connections = 10;
+        int connections = 10000;
         Flux.range(1, connections)
                 .flatMap(id ->
                         HttpClient.create()
                                 .websocket(WebsocketClientSpec.builder().handlePing(true).build())
-                                .uri(uri + id % 10)
+                                .uri(uri + (id % 10 + System.nanoTime()))
                                 .handle((inbound, outbound) -> {
                                     // Keep receiving messages indefinitely
                                     inbound.receive()
@@ -35,6 +35,7 @@ public class Client {
                                     return outbound.neverComplete();
                                 })
                                 .doOnSubscribe(sub -> System.out.println("Client " + id + " connected"))
+                                .doOnError(throwable -> log.error(throwable.getMessage(), throwable))
                 )
                 .subscribe();
 

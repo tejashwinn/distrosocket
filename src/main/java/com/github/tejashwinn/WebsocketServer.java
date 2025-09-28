@@ -1,42 +1,25 @@
 package com.github.tejashwinn;
 
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.util.Arrays;
-import java.util.Map;
-import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
-
 import com.github.tejashwinn.repo.UserConnectionRepo;
-import io.quarkus.arc.Arc;
-import io.vertx.mutiny.core.Vertx;
 import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
-import jakarta.websocket.OnClose;
-import jakarta.websocket.OnError;
-import jakarta.websocket.OnMessage;
-import jakarta.websocket.OnOpen;
+import jakarta.enterprise.event.Observes;
+import jakarta.enterprise.event.Shutdown;
+import jakarta.websocket.*;
 import jakarta.websocket.server.PathParam;
 import jakarta.websocket.server.ServerEndpoint;
-import jakarta.websocket.Session;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Slf4j
 @ServerEndpoint("/connections/{username}")
 @ApplicationScoped
-public class StartWebSocket {
+@RequiredArgsConstructor
+public class WebsocketServer {
 
-    public static byte[] uuidToBytes(UUID uuid) {
-        ByteBuffer bb = ByteBuffer.wrap(new byte[16]);
-        bb.order(ByteOrder.BIG_ENDIAN); // Standard network byte order
-        bb.putLong(uuid.getMostSignificantBits());
-        bb.putLong(uuid.getLeastSignificantBits());
-        return bb.array();
-    }
-
-
-    @Inject
-    private UserConnectionRepo userConnectionRepo;
+    private final UserConnectionRepo userConnectionRepo;
 
     private final Map<String, Session> sessions = new ConcurrentHashMap<>();
 
@@ -75,6 +58,14 @@ public class StartWebSocket {
                 }
             });
         });
+    }
+
+
+    public void onStop(@Observes Shutdown ev) {
+        log.info("The application is stopping...");
+        sessions.keySet().forEach(
+                k -> userConnectionRepo.remove(k, k)
+        );
     }
 
 }
