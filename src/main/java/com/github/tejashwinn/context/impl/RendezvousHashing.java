@@ -1,22 +1,23 @@
-package com.github.tejashwinn.util;
+package com.github.tejashwinn.context.impl;
 
+import com.github.tejashwinn.context.ServerContext;
 import lombok.SneakyThrows;
 
 import java.security.MessageDigest;
 import java.util.HashSet;
 import java.util.Set;
 
-public class RendezvousHashing {
+public class RendezvousHashing implements ServerContext {
+
     private final Set<String> servers;
     private final MessageDigest md;
 
     @SneakyThrows
     public RendezvousHashing(Set<String> servers) {
         this.servers = new HashSet<>(servers);
-        this.md = MessageDigest.getInstance("SHA-256"); // SHA-256 for better distribution
+        this.md = MessageDigest.getInstance("SHA-256");
     }
 
-    // A simple hash function to generate a score for a server-key pair
     private long getScore(String server, String key) {
         md.reset();
         md.update((server + ":" + key).getBytes());
@@ -32,11 +33,11 @@ public class RendezvousHashing {
                 ((long) (digest[7] & 0xFF));
     }
 
+    @Override
     public String getServer(String key) {
         if (servers.isEmpty()) {
             return null;
         }
-
         String bestServer = null;
         long highestScore = Long.MIN_VALUE;
 
@@ -50,10 +51,12 @@ public class RendezvousHashing {
         return bestServer;
     }
 
+    @Override
     public void addServer(String server) {
         this.servers.add(server);
     }
 
+    @Override
     public void removeServer(String server) {
         this.servers.remove(server);
     }
