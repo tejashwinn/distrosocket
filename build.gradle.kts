@@ -18,6 +18,7 @@ dependencies {
     implementation("io.quarkus:quarkus-rest")
     implementation("io.quarkus:quarkus-websockets")
     implementation("io.quarkus:quarkus-arc")
+    implementation("io.quarkus:quarkus-smallrye-health")
     implementation("io.quarkus:quarkus-redis-client")
     implementation("io.projectreactor.netty:reactor-netty:1.1.20")
 

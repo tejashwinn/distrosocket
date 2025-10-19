@@ -2,9 +2,7 @@ package com.github.tejashwinn.context;
 
 public interface ServerContext {
 
-    void addServer(String server);
-
-    void removeServer(String server);
-
-    String getServer(String key);
+    void addNode(String node);
+    void removeNode(String node);
+    String getAssignedNode(String key);
 }

@@ -1,56 +1,58 @@
 package com.github.tejashwinn.context.impl;
 
 import com.github.tejashwinn.context.ServerContext;
-import lombok.SneakyThrows;
 
 import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.util.*;
+import java.util.List;
+import java.util.SortedMap;
+import java.util.TreeMap;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class ConsistentHashing implements ServerContext {
-    private final TreeMap<Long, String> ring;
-    private final int numberOfReplicas;
-    private final MessageDigest md;
+    private final int virtualNodes;
+    private final SortedMap<Long, String> ring = new TreeMap<>();
 
-    @SneakyThrows
-    public ConsistentHashing(int numberOfReplicas) {
-        this.ring = new TreeMap<>();
-        this.numberOfReplicas = numberOfReplicas;
-        this.md = MessageDigest.getInstance("MD5");
+    public ConsistentHashing(List<String> nodes, int virtualNodes) {
+        this.virtualNodes = virtualNodes;
+        for (String node : nodes) addNode(node);
     }
 
-    public void addServer(String server) {
-        for (int i = 0; i < numberOfReplicas; i++) {
-            long hash = generateHash(server + i);
-            ring.put(hash, server);
+    private long hash(String key) {
+        try {
+            MessageDigest md = MessageDigest.getInstance("MD5");
+            byte[] digest = md.digest(key.getBytes(UTF_8));
+            long h = 0;
+            for (int i = 0; i < 4; i++) {
+                h <<= 8;
+                h |= (digest[i] & 0xFF);
+            }
+            return h & 0xffffffffL;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
     }
 
-    public void removeServer(String server) {
-        for (int i = 0; i < numberOfReplicas; i++) {
-            long hash = generateHash(server + i);
-            ring.remove(hash);
+    @Override
+    public void addNode(String node) {
+        for (int i = 0; i < virtualNodes; i++) {
+            ring.put(hash(node + "#" + i), node);
         }
     }
 
-    public String getServer(String key) {
-        if (ring.isEmpty()) {
-            return null;
+    @Override
+    public void removeNode(String node) {
+        for (int i = 0; i < virtualNodes; i++) {
+            ring.remove(hash(node + "#" + i));
         }
-        long hash = generateHash(key);
-        if (!ring.containsKey(hash)) {
-            hash = ring.ceilingKey(hash);
-        }
-        return ring.get(hash);
     }
 
-    private long generateHash(String key) {
-        md.reset();
-        md.update(key.getBytes());
-        byte[] digest = md.digest();
-        return ((long) (digest[3] & 0xFF) << 24) |
-                ((long) (digest[2] & 0xFF) << 16) |
-                ((long) (digest[1] & 0xFF) << 8) |
-                ((long) (digest[0] & 0xFF));
+    @Override
+    public String getAssignedNode(String key) {
+        if (ring.isEmpty()) return null;
+        long h = hash(key);
+        SortedMap<Long, String> tailMap = ring.tailMap(h);
+        long nodeHash = tailMap.isEmpty() ? ring.firstKey() : tailMap.firstKey();
+        return ring.get(nodeHash);
     }
 }

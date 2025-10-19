@@ -4,60 +4,56 @@ import com.github.tejashwinn.context.ServerContext;
 import lombok.SneakyThrows;
 
 import java.security.MessageDigest;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 public class RendezvousHashing implements ServerContext {
 
-    private final Set<String> servers;
-    private final MessageDigest md;
+    private final Set<String> nodes = new HashSet<>();
 
-    @SneakyThrows
-    public RendezvousHashing(Set<String> servers) {
-        this.servers = new HashSet<>(servers);
-        this.md = MessageDigest.getInstance("SHA-256");
+    public RendezvousHashing(Collection<String> initialNodes) {
+        nodes.addAll(initialNodes);
     }
 
-    private long getScore(String server, String key) {
-        md.reset();
-        md.update((server + ":" + key).getBytes());
-        byte[] digest = md.digest();
-        // Convert the first 8 bytes of the digest to a long
-        return ((long) (digest[0] & 0xFF) << 56) |
-                ((long) (digest[1] & 0xFF) << 48) |
-                ((long) (digest[2] & 0xFF) << 40) |
-                ((long) (digest[3] & 0xFF) << 32) |
-                ((long) (digest[4] & 0xFF) << 24) |
-                ((long) (digest[5] & 0xFF) << 16) |
-                ((long) (digest[6] & 0xFF) << 8) |
-                ((long) (digest[7] & 0xFF));
+    private long hash(String key, String node) {
+        try {
+            MessageDigest md = MessageDigest.getInstance("MD5");
+            byte[] digest = md.digest((key + ":" + node).getBytes(UTF_8));
+            long h = 0;
+            for (int i = 0; i < 8; i++) {
+                h <<= 8;
+                h |= (digest[i] & 0xFF);
+            }
+            return h;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
-    public String getServer(String key) {
-        if (servers.isEmpty()) {
-            return null;
-        }
-        String bestServer = null;
-        long highestScore = Long.MIN_VALUE;
+    public void addNode(String node) {
+        nodes.add(node);
+    }
 
-        for (String server : servers) {
-            long currentScore = getScore(server, key);
-            if (currentScore > highestScore) {
-                highestScore = currentScore;
-                bestServer = server;
+    @Override
+    public void removeNode(String node) {
+        nodes.remove(node);
+    }
+
+    @Override
+    public String getAssignedNode(String key) {
+        String bestNode = null;
+        long bestScore = Long.MIN_VALUE;
+        for (String node : nodes) {
+            long score = hash(key, node);
+            if (score > bestScore) {
+                bestScore = score;
+                bestNode = node;
             }
         }
-        return bestServer;
-    }
-
-    @Override
-    public void addServer(String server) {
-        this.servers.add(server);
-    }
-
-    @Override
-    public void removeServer(String server) {
-        this.servers.remove(server);
+        return bestNode;
     }
 }
