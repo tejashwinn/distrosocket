@@ -1,7 +1,6 @@
 package com.github.tejashwinn.context.impl;
 
 import com.github.tejashwinn.context.ServerContext;
-import lombok.SneakyThrows;
 
 import java.security.MessageDigest;
 import java.util.Collection;

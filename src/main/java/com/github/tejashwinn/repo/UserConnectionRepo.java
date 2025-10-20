@@ -3,9 +3,6 @@ package com.github.tejashwinn.repo;
 import io.quarkus.redis.datasource.ReactiveRedisDataSource;
 import io.quarkus.redis.datasource.set.ReactiveSetCommands;
 import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.enterprise.event.Observes;
-import jakarta.enterprise.event.Shutdown;
-import jakarta.enterprise.event.Startup;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
