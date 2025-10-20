@@ -13,17 +13,18 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Instant;
-import java.time.temporal.ChronoUnit;
-import java.util.*;
-
-import static java.time.temporal.ChronoUnit.MINUTES;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @ApplicationScoped
 public class GossipService {
 
+    @Inject
+    NodeState state;
 
-    final NodeState state = new NodeState();
     volatile long localHeartbeat = 0;
 
 
@@ -103,6 +104,8 @@ public class GossipService {
                 if (ex != null) {
                     NodeInfo n = state.members.get(peer);
                     if (n != null) n.setLastSeen(Instant.now());
+                    // TODO: Remove gracefully
+//                    state.members.remove(peer);
                 }
             });
         } catch (Exception e) {
@@ -132,18 +135,18 @@ public class GossipService {
         return state.members;
     }
 
-    @Scheduled(every = "${gossip.heartbeat-interval:10000}ms")
-    public void cleanUpPartitionedInstances() {
-        state.members
-                .entrySet()
-                .stream()
-                .filter(e -> Objects.nonNull(e.getValue()))
-                .forEach((e) -> {
-                    if (Objects.nonNull(e.getValue().getLastSeen())
-                            && e.getValue().getLastSeen().isBefore(Instant.now().minus(1, MINUTES))) {
-                        log.info("Removing {} from available clusters", e.getKey());
-                        state.members.remove(e.getKey());
-                    }
-                });
-    }
+//    @Scheduled(every = "${gossip.heartbeat-interval:10000}ms")
+//    public void cleanUpPartitionedInstances() {
+//        state.members
+//                .entrySet()
+//                .stream()
+//                .filter(e -> Objects.nonNull(e.getValue()))
+//                .forEach((e) -> {
+//                    if (Objects.nonNull(e.getValue().getLastSeen())
+//                            && e.getValue().getLastSeen().isBefore(Instant.now().minus(1, MINUTES))) {
+//                        log.info("Removing {} from available clusters", e.getKey());
+//                        state.members.remove(e.getKey());
+//                    }
+//                });
+//    }
 }
