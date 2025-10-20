@@ -1,8 +1,10 @@
 package com.github.tejashwinn.gossip;
 
+import com.github.tejashwinn.context.ServerContext;
 import io.quarkus.scheduler.Scheduled;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
@@ -11,10 +13,10 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.time.temporal.ChronoUnit;
+import java.util.*;
+
+import static java.time.temporal.ChronoUnit.MINUTES;
 
 @Slf4j
 @ApplicationScoped
@@ -38,7 +40,8 @@ public class GossipService {
 
     HttpClient http = HttpClient.newHttpClient();
 
-
+    @Inject
+    ServerContext context;
     String myId;
 
 
@@ -90,7 +93,12 @@ public class GossipService {
         try {
             URI uri = new URI("http://" + peer + "/gossip");
             String body = JsonUtil.toJson(state.members);
-            HttpRequest req = HttpRequest.newBuilder().uri(uri).header("Content-Type", "application/json").POST(HttpRequest.BodyPublishers.ofString(body)).build();
+            HttpRequest req = HttpRequest
+                    .newBuilder()
+                    .uri(uri)
+                    .header("Content-Type", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofString(body))
+                    .build();
             http.sendAsync(req, HttpResponse.BodyHandlers.ofString()).whenComplete((resp, ex) -> {
                 if (ex != null) {
                     NodeInfo n = state.members.get(peer);
@@ -109,6 +117,7 @@ public class GossipService {
             NodeInfo local = state.members.get(id);
             if (local == null) {
                 state.members.put(id, new NodeInfo(id, remoteInfo.getHeartbeat()));
+                context.addNode(id);
             } else {
                 if (remoteInfo.getHeartbeat() > local.getHeartbeat()) {
                     local.setHeartbeat(remoteInfo.getHeartbeat());
@@ -121,5 +130,20 @@ public class GossipService {
 
     public Map<String, NodeInfo> getLocalMembership() {
         return state.members;
+    }
+
+    @Scheduled(every = "${gossip.heartbeat-interval:10000}ms")
+    public void cleanUpPartitionedInstances() {
+        state.members
+                .entrySet()
+                .stream()
+                .filter(e -> Objects.nonNull(e.getValue()))
+                .forEach((e) -> {
+                    if (Objects.nonNull(e.getValue().getLastSeen())
+                            && e.getValue().getLastSeen().isBefore(Instant.now().minus(1, MINUTES))) {
+                        log.info("Removing {} from available clusters", e.getKey());
+                        state.members.remove(e.getKey());
+                    }
+                });
     }
 }

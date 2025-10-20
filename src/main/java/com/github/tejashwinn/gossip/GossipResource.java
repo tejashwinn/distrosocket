@@ -15,10 +15,8 @@ import java.util.Map;
 @Consumes(MediaType.APPLICATION_JSON)
 public class GossipResource {
 
-
     @Inject
     GossipService gossipService;
-
 
     @POST
     public Response receive(Map<String, NodeInfo> remote) {
