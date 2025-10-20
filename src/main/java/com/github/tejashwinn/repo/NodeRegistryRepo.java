@@ -35,7 +35,6 @@ public class NodeRegistryRepo {
                         }, error -> {
                             log.info("Error adding element: {}", nodeId, error);
                         }
-
                 );
     }
 
@@ -48,18 +47,17 @@ public class NodeRegistryRepo {
                         }, error -> {
                             log.info("Error removing element: {}", nodeId, error);
                         }
-
                 );
     }
 
     public void onStart(@Observes StartupEvent ev) {
         log.info("The application is starting... adding node id to redis: {}", NODE_ID);
-        put(NODE_ID);
+        put("server:" + NODE_ID);
     }
 
     public void onStop(@Observes ShutdownEvent ev) {
         log.info("The application is stopping... adding node id to redis: {}", NODE_ID);
-        remove(NODE_ID);
+        remove("server:" + NODE_ID);
     }
 
 }

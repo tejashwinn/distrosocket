@@ -1,0 +1,7 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="Gossip Run" type="CompoundRunConfigurationType">
+    <toRun name="[quarkusDev] (1)" type="GradleRunConfiguration" />
+    <toRun name="[quarkusDev] (2)" type="GradleRunConfiguration" />
+    <method v="2" />
+  </configuration>
+</component>
